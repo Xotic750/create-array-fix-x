@@ -78,6 +78,14 @@ describe('createArrayFix', function () {
   });
 
   it('setting length outside limits should throw', function () {
+    expect(function () {
+      createArrayFix(-11);
+    }).toThrow();
+
+    expect(function () {
+      createArrayFix(Math.pow(2, 32) + 1);
+    }).toThrow();
+
     var testArray = createArrayFix();
     expect(function () {
       testArray.length = -1;

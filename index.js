@@ -97,7 +97,7 @@ if (test.length === 1) {
     var thisArg = new Proxy(context, handler);
     if (args.length > 0) {
       if (args.length === 1) {
-        backing.length = toLength(args[0]);
+        backing.length = toInteger(args[0]);
       } else {
         Array.prototype.push.apply(thisArg, args);
       }
@@ -273,7 +273,7 @@ module.exports = function createArray() {
   }
 
   if (arguments.length === 1) {
-    array.length = toLength(arguments[0]);
+    array.length = toInteger(arguments[0]);
     return array;
   }
 
