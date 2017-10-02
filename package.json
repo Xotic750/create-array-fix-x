@@ -1,6 +1,6 @@
 {
   "name": "create-array-fix-x",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Address Safari 10.1 array bug: https://bugs.webkit.org/show_bug.cgi?id=170264",
   "homepage": "https://github.com/Xotic750/create-array-fix-x",
   "author": {

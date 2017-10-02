@@ -23,16 +23,16 @@
 ## create-array-fix-x
 Address Safari 10.1 array bug: https://bugs.webkit.org/show_bug.cgi?id=170264
 
-**Version**: 1.0.0  
+**Version**: 0.0.1  
 **Author**: Xotic750 <Xotic750@gmail.com>  
 **License**: [MIT](&lt;https://opensource.org/licenses/MIT&gt;)  
 **Copyright**: Xotic750  
 <a name="exp_module_create-array-fix-x--module.exports"></a>
 
-### `module.exports` ⇒ <code>Object</code> ⏏
+### `module.exports([parameters])` ⇒ <code>Object</code> ⏏
 Address Safari 10.1 array bug: https://bugs.webkit.org/show_bug.cgi?id=170264
 
-**Kind**: Exported member  
+**Kind**: Exported function  
 **Returns**: <code>Object</code> - An array or array subclass if array is broken.  
 
 | Param | Type | Description |
