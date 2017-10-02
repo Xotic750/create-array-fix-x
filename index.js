@@ -1,6 +1,6 @@
 /**
  * @file Address Safari 10.1 array bug: https://bugs.webkit.org/show_bug.cgi?id=170264
- * @version 0.0.1
+ * @version 0.1.0
  * @author Xotic750 <Xotic750@gmail.com>
  * @copyright  Xotic750
  * @license {@link <https://opensource.org/licenses/MIT> MIT}
@@ -20,6 +20,41 @@ if (test.length === 1) {
   var reIsUint = /^(?:0|[1-9]\d*)$/;
   var minLength = 0;
   var maxLength = Math.pow(2, 32) - 1;
+
+  var toObject = function _toObject(value) {
+    if (typeof value === 'undefined' || value === null) {
+      throw new TypeError('Cannot call method on ' + value);
+    }
+
+    return Object(value);
+  };
+
+  var toInteger = function _toInteger(value) {
+    var number = Number(value);
+    if (Number.isNaN(number)) {
+      return 0;
+    }
+
+    if (number === 0 || Number.isFinite(number) === false) {
+      return number;
+    }
+
+    return Math.sign(number) * Math.floor(Math.abs(number));
+  };
+
+  var toLength = function _toLength(value) {
+    var len = toInteger(value);
+    // includes converting -0 to +0
+    if (len <= 0) {
+      return 0;
+    }
+
+    if (len > Number.MAX_SAFE_INTEGER) {
+      return Number.MAX_SAFE_INTEGER;
+    }
+
+    return len;
+  };
 
   var handler = {
     get: function _get(obj, prop) {
@@ -75,13 +110,18 @@ if (test.length === 1) {
   // eslint-disable-next-line no-new-func
   ArraySubClass = Function('init', classStr)(init);
 
+  var setRelative = function _setRelative(value, length) {
+    return value < 0 ? Math.max(length + value, 0) : Math.min(value, length);
+  };
+
   Object.defineProperties(ArraySubClass.prototype, {
     concat: {
       configurable: true,
       // eslint-disable-next-line no-unused-vars
       value: function concat(value1) {
+        var object = toObject(this);
         var args = Array.prototype.slice.call(arguments);
-        args.unshift(this);
+        args.unshift(object);
         var concated = Array.prototype.concat.apply([], args);
 
         return concated.reduce(function (arr, item, index) {
@@ -94,13 +134,13 @@ if (test.length === 1) {
     entries: {
       configurable: true,
       value: function entries() {
-        var iterable = Array.prototype.entries.call(this);
+        var iterable = Array.prototype.entries.apply(toObject(this), arguments);
         var nextFn = iterable.next;
 
         return Object.defineProperty(iterable, 'next', {
           configurable: true,
           value: function next() {
-            var iteratorObject = nextFn.call(this);
+            var iteratorObject = nextFn.apply(toObject(this), arguments);
 
             if (iteratorObject.done) {
               return iteratorObject;
@@ -110,23 +150,19 @@ if (test.length === 1) {
               done: false,
               value: new ArraySubClass(iteratorObject.value[0], iteratorObject.value[1])
             };
-          }.bind(iterable)
+          }
         });
       }
     },
     filter: {
       configurable: true,
       value: function filter(callBack) {
-        if (typeof this === 'undefined' || this === null) {
-          throw new TypeError('Cannot call method on ' + this);
-        }
-
+        var object = toObject(this);
         if (typeof callBack !== 'function') {
           throw new TypeError(callBack + ' is not a function');
         }
 
-        var object = Object(this);
-        var length = object.length >>> 0;
+        var length = toLength(object.length);
         var thisArg;
         if (arguments.length > 1) {
           thisArg = arguments[1];
@@ -149,16 +185,12 @@ if (test.length === 1) {
     map: {
       configurable: true,
       value: function map(callBack) {
-        if (typeof this === 'undefined' || this === null) {
-          throw new TypeError('Cannot call method on ' + this);
-        }
-
+        var object = toObject(this);
         if (typeof callBack !== 'function') {
           throw new TypeError(callBack + ' is not a function');
         }
 
-        var object = Object(this);
-        var length = object.length >>> 0;
+        var length = toLength(object.length);
         var thisArg;
         if (arguments.length > 1) {
           thisArg = arguments[1];
@@ -175,6 +207,42 @@ if (test.length === 1) {
         }
 
         return result;
+      }
+    },
+    slice: {
+      configurable: true,
+      value: function slice(start, end) {
+        var object = toObject(this);
+        var length = toLength(object.length);
+        var k = setRelative(toInteger(start), length);
+        var relativeEnd = typeof end === undefined ? length : toInteger(end);
+        var finalEnd = setRelative(relativeEnd, length);
+        var val = new ArraySubClass();
+        val.length = Math.max(finalEnd - k, 0);
+        var next = 0;
+        while (k < finalEnd) {
+          if (k in object) {
+            val[next] = object[k];
+          }
+
+          next += 1;
+          k += 1;
+        }
+
+        return val;
+      }
+    },
+    splice: {
+      configurable: true,
+      // eslint-disable-next-line no-unused-vars
+      value: function splice(start, deleteCount) {
+        var removed = Array.prototype.splice.apply(toObject(this), arguments);
+
+        return removed.reduce(function (arr, item, index) {
+          arr[index] = item;
+
+          return arr;
+        }, new ArraySubClass(removed.length));
       }
     }
   });

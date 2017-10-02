@@ -23,7 +23,7 @@
 ## create-array-fix-x
 Address Safari 10.1 array bug: https://bugs.webkit.org/show_bug.cgi?id=170264
 
-**Version**: 0.0.1  
+**Version**: 0.1.0  
 **Author**: Xotic750 <Xotic750@gmail.com>  
 **License**: [MIT](&lt;https://opensource.org/licenses/MIT&gt;)  
 **Copyright**: Xotic750  
