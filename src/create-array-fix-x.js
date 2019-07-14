@@ -1,6 +1,5 @@
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.returnExports = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 /**
- * @file Address Safari 10.1 array bug: https://bugs.webkit.org/show_bug.cgi?id=170264
+ * @file Address Safari 10.1 array bug: https://bugs.webkit.org/show_bug.cgi?id=170264.
  * @version 0.1.0
  * @author Xotic750 <Xotic750@gmail.com>
  * @copyright  Xotic750
@@ -10,14 +9,13 @@
 
 /* global Proxy */
 
-'use strict';
-
-var test = [0, 2147483648]; // Note: the second number is greater than a signed 32bit int
+const test = [0, 2147483648]; // Note: the second number is greater than a signed 32bit int
 test.shift(); // remove the first element so arr is [2147483648]
 test[1] = 1; // Safari fails to add the new element and the array is unchanged
 
-var toInteger = function _toInteger(value) {
-  var number = Number(value);
+const toInteger = function _toInteger(value) {
+  const number = Number(value);
+
   if (Number.isNaN(number)) {
     return 0;
   }
@@ -29,11 +27,12 @@ var toInteger = function _toInteger(value) {
   return Math.sign(number) * Math.floor(Math.abs(number));
 };
 
-var ArraySubClass;
-if (test.length === 1) {
+let ArraySubClass;
 
-  var toLength = function _toLength(value) {
-    var len = toInteger(value);
+if (test.length === 1) {
+  const toLength = function _toLength(value) {
+    const len = toInteger(value);
+
     // includes converting -0 to +0
     if (len <= 0) {
       return 0;
@@ -46,25 +45,27 @@ if (test.length === 1) {
     return len;
   };
 
-  var reIsUint = /^(?:0|[1-9]\d*)$/;
-  var minLength = 0;
-  var maxLength = Math.pow(2, 32) - 1;
+  const reIsUint = /^(?:0|[1-9]\d*)$/;
+  const minLength = 0;
+  const maxLength = Math.pow(2, 32) - 1;
 
-  var toObject = function _toObject(value) {
+  const toObject = function _toObject(value) {
     if (typeof value === 'undefined' || value === null) {
-      throw new TypeError('Cannot call method on ' + value);
+      throw new TypeError(`Cannot call method on ${value}`);
     }
 
     return Object(value);
   };
 
-  var handler = {
+  const handler = {
     get: function _get(obj, prop) {
-      var backing = obj['[[backing]]'];
+      const backing = obj['[[backing]]'];
+
       return prop in backing ? backing[prop] : obj[prop];
     },
     has: function _has(obj, prop) {
-      var backing = obj['[[backing]]'];
+      const backing = obj['[[backing]]'];
+
       return prop in backing || prop in obj;
     },
     set: function _set(obj, prop, value) {
@@ -74,7 +75,8 @@ if (test.length === 1) {
         }
       }
 
-      var backing = obj['[[backing]]'];
+      const backing = obj['[[backing]]'];
+
       if (reIsUint.test(prop) && prop >= backing.length) {
         backing.length = Number(prop) + 1;
       }
@@ -82,21 +84,22 @@ if (test.length === 1) {
       backing[prop] = value;
 
       return true;
-    }
+    },
   };
 
-  var init = function _init(context, args) {
-    var backing = Object.defineProperty(Object.create(null), 'length', {
+  const init = function _init(context, args) {
+    const backing = Object.defineProperty(Object.create(null), 'length', {
       value: 0,
-      writable: true
+      writable: true,
     });
 
     Object.defineProperty(context, '[[backing]]', {
       value: backing,
-      writable: true
+      writable: true,
     });
 
-    var thisArg = new Proxy(context, handler);
+    const thisArg = new Proxy(context, handler);
+
     if (args.length > 0) {
       if (args.length === 1) {
         backing.length = toInteger(args[0]);
@@ -108,11 +111,11 @@ if (test.length === 1) {
     return thisArg;
   };
 
-  var classStr = 'return class ArraySubClass extends Array {constructor(){super();return init(this,arguments);}}';
+  const classStr = 'return class ArraySubClass extends Array {constructor(){super();return init(this,arguments);}}';
   // eslint-disable-next-line no-new-func
   ArraySubClass = Function('init', classStr)(init);
 
-  var setRelative = function _setRelative(value, length) {
+  const setRelative = function _setRelative(value, length) {
     return value < 0 ? Math.max(length + value, 0) : Math.min(value, length);
   };
 
@@ -121,28 +124,28 @@ if (test.length === 1) {
       configurable: true,
       // eslint-disable-next-line no-unused-vars
       value: function concat(value1) {
-        var object = toObject(this);
-        var args = Array.prototype.slice.call(arguments);
+        const object = toObject(this);
+        const args = Array.prototype.slice.call(arguments);
         args.unshift(object);
-        var concated = Array.prototype.concat.apply([], args);
+        const concated = Array.prototype.concat.apply([], args);
 
-        return concated.reduce(function (arr, item, index) {
+        return concated.reduce(function(arr, item, index) {
           arr[index] = item;
 
           return arr;
         }, new ArraySubClass(concated.length));
-      }
+      },
     },
     entries: {
       configurable: true,
       value: function entries() {
-        var iterable = Array.prototype.entries.apply(toObject(this), arguments);
-        var nextFn = iterable.next;
+        const iterable = Array.prototype.entries.apply(toObject(this), arguments);
+        const nextFn = iterable.next;
 
         return Object.defineProperty(iterable, 'next', {
           configurable: true,
           value: function next() {
-            var iteratorObject = nextFn.apply(toObject(this), arguments);
+            const iteratorObject = nextFn.apply(toObject(this), arguments);
 
             if (iteratorObject.done) {
               return iteratorObject;
@@ -150,31 +153,34 @@ if (test.length === 1) {
 
             return {
               done: false,
-              value: new ArraySubClass(iteratorObject.value[0], iteratorObject.value[1])
+              value: new ArraySubClass(iteratorObject.value[0], iteratorObject.value[1]),
             };
-          }
+          },
         });
-      }
+      },
     },
     filter: {
       configurable: true,
       value: function filter(callBack) {
-        var object = toObject(this);
+        const object = toObject(this);
+
         if (typeof callBack !== 'function') {
-          throw new TypeError(callBack + ' is not a function');
+          throw new TypeError(`${callBack} is not a function`);
         }
 
-        var length = toLength(object.length);
-        var thisArg;
+        const length = toLength(object.length);
+        let thisArg;
+
         if (arguments.length > 1) {
           thisArg = arguments[1];
         }
 
-        var noThis = typeof thisArg === 'undefined';
-        var result = new ArraySubClass();
-        for (var i = 0; i < length; i += 1) {
+        const noThis = typeof thisArg === 'undefined';
+        const result = new ArraySubClass();
+        for (let i = 0; i < length; i += 1) {
           if (i in object) {
-            var item = object[i];
+            const item = object[i];
+
             if (noThis ? callBack(item, i, object) : callBack.call(thisArg, item, i, object)) {
               result.push(item);
             }
@@ -182,46 +188,48 @@ if (test.length === 1) {
         }
 
         return result;
-      }
+      },
     },
     map: {
       configurable: true,
       value: function map(callBack) {
-        var object = toObject(this);
+        const object = toObject(this);
+
         if (typeof callBack !== 'function') {
-          throw new TypeError(callBack + ' is not a function');
+          throw new TypeError(`${callBack} is not a function`);
         }
 
-        var length = toLength(object.length);
-        var thisArg;
+        const length = toLength(object.length);
+        let thisArg;
+
         if (arguments.length > 1) {
           thisArg = arguments[1];
         }
 
-        var noThis = typeof thisArg === 'undefined';
-        var result = new ArraySubClass();
+        const noThis = typeof thisArg === 'undefined';
+        const result = new ArraySubClass();
         result.length = length;
-        for (var i = 0; i < length; i += 1) {
+        for (let i = 0; i < length; i += 1) {
           if (i in object) {
-            var item = object[i];
+            const item = object[i];
             result[i] = noThis ? callBack(item, i, object) : callBack.call(thisArg, item, i, object);
           }
         }
 
         return result;
-      }
+      },
     },
     slice: {
       configurable: true,
       value: function slice(start, end) {
-        var object = toObject(this);
-        var length = toLength(object.length);
-        var k = setRelative(toInteger(start), length);
-        var relativeEnd = typeof end === 'undefined' ? length : toInteger(end);
-        var finalEnd = setRelative(relativeEnd, length);
-        var val = new ArraySubClass();
+        const object = toObject(this);
+        const length = toLength(object.length);
+        let k = setRelative(toInteger(start), length);
+        const relativeEnd = typeof end === 'undefined' ? length : toInteger(end);
+        const finalEnd = setRelative(relativeEnd, length);
+        const val = new ArraySubClass();
         val.length = Math.max(finalEnd - k, 0);
-        var next = 0;
+        let next = 0;
         while (k < finalEnd) {
           if (k in object) {
             val[next] = object[k];
@@ -232,29 +240,29 @@ if (test.length === 1) {
         }
 
         return val;
-      }
+      },
     },
     splice: {
       configurable: true,
       // eslint-disable-next-line no-unused-vars
       value: function splice(start, deleteCount) {
-        var removed = Array.prototype.splice.apply(toObject(this), arguments);
+        const removed = Array.prototype.splice.apply(toObject(this), arguments);
 
-        return removed.reduce(function (arr, item, index) {
+        return removed.reduce(function(arr, item, index) {
           arr[index] = item;
 
           return arr;
         }, new ArraySubClass(removed.length));
-      }
-    }
+      },
+    },
   });
 }
 
 /**
- * Address Safari 10.1 array bug: https://bugs.webkit.org/show_bug.cgi?id=170264
+ * Address Safari 10.1 array bug: https://bugs.webkit.org/show_bug.cgi?id=170264.
  *
  * @param {number|...*} [parameters] - The construction parameters.
- * @returns {Object} An array or array subclass if array is broken.
+ * @returns {object} An array or array subclass if array is broken.
  * @example
  * var createArray = require('create-array-fix-x');
  *
@@ -269,18 +277,17 @@ if (test.length === 1) {
  * testArray; // [2147483648, 1]
  */
 module.exports = function createArray() {
-  var array = ArraySubClass ? new ArraySubClass() : [];
+  const array = ArraySubClass ? new ArraySubClass() : [];
+
   if (arguments.length === 0) {
     return array;
   }
 
   if (arguments.length === 1) {
     array.length = toInteger(arguments[0]);
+
     return array;
   }
 
   return array.slice.call(arguments);
 };
-
-},{}]},{},[1])(1)
-});
